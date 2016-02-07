@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <bean id="anExecutor" class="org.springframework.scheduling.concurrent.ThreadPoolExecutorFactoryBean"
+          scope="prototype" abstract="true">
+        <property name="awaitTerminationSeconds" value="${executor.timeout}"/>
+        <property name="keepAliveSeconds" value="${executor.timeout}"/>
+        <property name="waitForTasksToCompleteOnShutdown" value="true"/>
+    </bean>
+
+    <bean id="orderExecutor" class="org.springframework.scheduling.concurrent.ThreadPoolExecutorFactoryBean"
+          parent="anExecutor">
+        <property name="corePoolSize" value="${max.amount.get}"/>
+        <property name="maxPoolSize" value="${max.amount.get}"/>
+        <property name="queueCapacity" value="${queue.order.size}"/>
+        <property name="threadNamePrefix" value="Order-"/>
+    </bean>
+
+    <bean id="chooseCoffeeExecutor" class="org.springframework.scheduling.concurrent.ThreadPoolExecutorFactoryBean"
+          parent="anExecutor">
+        <property name="corePoolSize" value="${max.amount.buy}"/>
+        <property name="maxPoolSize" value="${max.amount.buy}"/>
+        <property name="queueCapacity" value="${queue.choose_coffee.size}"/>
+        <property name="threadNamePrefix" value="ChooseCoffee-"/>
+    </bean>
+
+    <bean id="paymentExecutor" class="org.springframework.scheduling.concurrent.ThreadPoolExecutorFactoryBean"
+          parent="anExecutor">
+        <property name="corePoolSize" value="${max.amount.pay}"/>
+        <property name="maxPoolSize" value="${max.amount.pay}"/>
+        <property name="queueCapacity" value="${queue.payment.size}"/>
+        <property name="threadNamePrefix" value="Payment-"/>
+    </bean>
+
+    <bean id="processExecutor" class="org.springframework.scheduling.concurrent.ThreadPoolExecutorFactoryBean"
+          parent="anExecutor">
+        <property name="corePoolSize" value="${max.amount.buy}"/>
+        <property name="maxPoolSize" value="${max.amount.buy}"/>
+        <property name="queueCapacity" value="${queue.process.size}"/>
+        <property name="threadNamePrefix" value="Process-"/>
+    </bean>
+
+</beans>
