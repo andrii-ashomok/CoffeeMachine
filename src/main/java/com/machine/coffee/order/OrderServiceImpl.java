@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 
+import java.util.Timer;
 import java.util.concurrent.*;
 
 /**
@@ -34,11 +35,11 @@ public class OrderServiceImpl implements OrderService {
 
 
     @Override
-    public synchronized Client takeOrder(final int index) {
+    public void takeOrder(Client client) {
         Watcher watcher = new Watcher();
         watcher.start();
 
-        Future<Client> clientFuture = orderExecutor.submit(new Order(index));
+        Future<Client> clientFuture = orderExecutor.submit(new Order(client));
 
         Client modifyClient = null;
         try {
@@ -50,9 +51,7 @@ public class OrderServiceImpl implements OrderService {
         }
 
         watcher.stop();
-        log.info("Order process duration {} ms", watcher.getInterval());
-
-        return modifyClient;
+        log.info("Order process {}, duration {} ms", modifyClient, watcher.getInterval());
     }
 
     public void findACup() {
@@ -102,8 +101,8 @@ public class OrderServiceImpl implements OrderService {
 
         private Client client;
 
-        private Order(int index) {
-            this.client = new Client(index);
+        private Order(Client client) {
+            this.client = client;
         }
 
         @Override
@@ -115,8 +114,32 @@ public class OrderServiceImpl implements OrderService {
 
             long fillTime = client.getCoffee().getCockTime();
 
-            findACup();
-            putCup();
+/*            findACup();
+            putCup();*/
+
+           Timer timerFindACup = new Timer();
+            timerFindACup.schedule(
+                    new java.util.TimerTask() {
+                        @Override
+                        public void run() {
+                            findACup();
+                        }
+                    },
+                    1
+            );
+
+            timerFindACup.wait(timeFindCup);
+
+            new java.util.Timer().schedule(
+                    new java.util.TimerTask() {
+                        @Override
+                        public void run() {
+                            findACup();
+                        }
+                    },
+                    5000
+            );
+
             pickType();
             fillDrink(fillTime);
             leave();
@@ -135,5 +158,63 @@ public class OrderServiceImpl implements OrderService {
             return client;
         }
     }
+
+    /*private final class Order im TimerTask {
+
+        private Client client;
+
+        private Order(int index) {
+            this.client = new Client(index);
+        }
+
+        @Override
+        public void run() {
+            log.info("Order process is started for Client-{}", client.getIndex());
+
+            Watcher watcher = new Watcher();
+            watcher.start();
+
+            long fillTime = client.getCoffee().getCockTime();
+
+            new java.util.Timer().schedule(
+                    new java.util.TimerTask() {
+                        @Override
+                        public void run() {
+                            findACup();
+                        }
+                    },
+                    5000
+            );
+
+            new java.util.Timer().schedule(
+                    new java.util.TimerTask() {
+                        @Override
+                        public void run() {
+                            findACup();
+                        }
+                    },
+                    5000
+            );
+//            findACup();
+            putCup();
+            pickType();
+            fillDrink(fillTime);
+            leave();
+
+            watcher.stop();
+
+            long interval = watcher.getInterval();
+            log.debug("Client-{}. Operation 'Order' duration {} ms",
+                    client.getIndex(), interval);
+
+
+            client.setSpendTimeToTakeOrder(interval);
+
+            log.info("Order process completed. {}", client);
+
+
+        }
+    }*/
+
 
 }

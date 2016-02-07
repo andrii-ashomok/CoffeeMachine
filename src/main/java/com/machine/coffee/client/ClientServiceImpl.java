@@ -85,7 +85,7 @@ public class ClientServiceImpl implements ClientService {
                 client.setSpendTimeToPay(modifyClient.getSpendTimeToPay());
             }
 
-            modifyClient = orderService.takeOrder(client.getIndex());
+            /*modifyClient = */orderService.takeOrder(client);
 
             if (Objects.nonNull(modifyClient)) {
                 client.setSpendTimeToTakeOrder(modifyClient.getSpendTimeToTakeOrder());

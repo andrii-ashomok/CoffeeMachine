@@ -7,7 +7,7 @@ import com.machine.coffee.client.Client;
  */
 public interface OrderService {
 
-    Client takeOrder(int index);
+    void takeOrder(Client client);
 
     void findACup();
 

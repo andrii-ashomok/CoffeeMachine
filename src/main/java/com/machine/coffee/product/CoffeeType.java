@@ -18,4 +18,6 @@ public enum CoffeeType {
     }
 
     public String getType() {return type; }
+
+    public static int size() {return values().length;}
 }
