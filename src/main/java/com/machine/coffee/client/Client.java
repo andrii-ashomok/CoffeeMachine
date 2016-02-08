@@ -18,6 +18,10 @@ public class Client {
         this.index = index;
     }
 
+    public Client(int index, Coffee coffee) {
+        this.index = index;
+        this.coffee = coffee;
+    }
 
     public void setIndex(int index) {
         this.index = index;

@@ -1,9 +1,13 @@
 package com.machine.coffee.order;
 
+import com.machine.coffee.ClientGenerate;
+import com.machine.coffee.client.Client;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.testng.AbstractTestNGSpringContextTests;
 import org.testng.annotations.Test;
+
+import java.util.stream.Stream;
 
 /**
  * Created by rado on 07.02.2016.
@@ -19,9 +23,11 @@ public class OrderServiceTest extends AbstractTestNGSpringContextTests {
     public void testTakeOrder() {
         int size = 15;
 
-        for (int i = 1; i <= size; i++ ) {
-            orderService.takeOrder(i);
-        }
+        Stream<Client> clientStream = ClientGenerate.generateForOrder(size);
+
+        clientStream.forEach(orderService::takeOrder);
+
+
     }
 
 }

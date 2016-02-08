@@ -4,7 +4,6 @@ import com.machine.coffee.client.Client;
 import com.machine.coffee.product.Coffee;
 import com.machine.coffee.product.CoffeeType;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Stream;
@@ -14,11 +13,13 @@ import java.util.stream.Stream;
  */
 public class ClientGenerate {
 
-    public static Stream generateForOrder(int size) {
+    public static Stream<Client> generateForOrder(int size) {
 
-        return Stream.generate(c -> new Client(ThreadLocalRandom.current().nextInt(size),
-                new Coffee(randomCoffeeType(), ThreadLocalRandom.current().nextInt(100),
-                        ThreadLocalRandom.current().nextInt(400)))).limit(size).
+         return Stream.generate(() ->
+                new Client(ThreadLocalRandom.current().nextInt(size),
+                        new Coffee(randomCoffeeType(),
+                                ThreadLocalRandom.current().nextInt(100),
+                                ThreadLocalRandom.current().nextLong(400)))).limit(size);
     }
 
     private static CoffeeType randomCoffeeType() {
