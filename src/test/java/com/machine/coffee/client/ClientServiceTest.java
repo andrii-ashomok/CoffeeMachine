@@ -17,7 +17,10 @@ public class ClientServiceTest extends AbstractTestNGSpringContextTests {
 
     @Test
     public void testProcessClient() {
-        clientService.processClient(20);
+        assert clientService.processClient(0).isEmpty();
+
+        int size = 20;
+        assert clientService.processClient(size).size() == size;
     }
 
 }

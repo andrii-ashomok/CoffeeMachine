@@ -20,25 +20,30 @@ public class PaymentServiceImpl implements PaymentService {
     @Value("${time.pay.cash}")
     private long timePayCash;
 
+    private static final int SLEEP_TIME = 500; // ms, wait for pay coffee process will be done
+
     private ExecutorService paymentExecutor;
 
     public void setPaymentExecutor(ExecutorService paymentExecutor) {
         this.paymentExecutor = paymentExecutor;
     }
 
-
+    @Override
     public Client pay(final int index) {
 
         Future<Client> clientFuture = paymentExecutor.submit(new Payment(index));
         Client modifyClient = null;
         try {
-            /*while (!clientFuture.isDone())
-                Thread.currentThread().join();*/
+            while (!clientFuture.isDone()) {
+                log.info("Wait {} ms until Client-{} will pay for coffee", SLEEP_TIME, index);
+                TimeUnit.MILLISECONDS.sleep(SLEEP_TIME);
+            }
 
             modifyClient = clientFuture.get();
-
+            log.info("Client-{} payed for coffee, {}", index, modifyClient);
         } catch (InterruptedException | ExecutionException e) {
-//            e.printStackTrace();
+            log.error("Payment process interrupted for Client-{}, {}",
+                    index, e.getMessage(), e);
         }
 
         return modifyClient;
@@ -66,15 +71,6 @@ public class PaymentServiceImpl implements PaymentService {
 
             long limitTime = isCash ? timePayCash : timePayCredit;
             if (interval < limitTime) {
-
-                try {
-                    log.debug("Client index {}. Operation 'Pay' go to sleep: {} ms",
-                            client.getIndex(), limitTime - interval);
-                    Thread.currentThread().join(limitTime - interval);
-                } catch (InterruptedException e) {
-                    log.error("Interrupted during operation 'payment'. {}", e.getMessage(), e);
-                }
-
                 client.setSpendTimeToPay(limitTime);
             } else
                 client.setSpendTimeToPay(interval);
@@ -85,4 +81,8 @@ public class PaymentServiceImpl implements PaymentService {
         }
     }
 
+    @Override
+    public void shutdown() {
+        paymentExecutor.shutdown();
+    }
 }

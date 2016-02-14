@@ -36,8 +36,8 @@
 
     <bean id="processExecutor" class="org.springframework.scheduling.concurrent.ThreadPoolExecutorFactoryBean"
           parent="anExecutor">
-        <property name="corePoolSize" value="${max.amount.buy}"/>
-        <property name="maxPoolSize" value="${max.amount.buy}"/>
+        <property name="corePoolSize" value="${max.client.process}"/>
+        <property name="maxPoolSize" value="${max.client.process}"/>
         <property name="queueCapacity" value="${queue.process.size}"/>
         <property name="threadNamePrefix" value="Process-"/>
     </bean>

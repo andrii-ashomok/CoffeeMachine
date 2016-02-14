@@ -1,21 +1,24 @@
 package com.machine.coffee.order;
 
 import com.machine.coffee.client.Client;
+import com.machine.coffee.product.Coffee;
 
 /**
  * Created by rado on 06.02.2016.
  */
 public interface OrderService {
 
-    void takeOrder(Client client);
+    Client takeOrder(int index, Coffee coffee);
 
-    void findACup();
+    long findACup(int index);
 
-    void putCup();
+    long putCup(int index);
 
-    void pickType();
+    long pickType(int index);
 
-    void fillDrink(long time);
+    long fillDrink(int index, Coffee coffee);
 
-    void leave();
+    long leave(int index);
+
+    void shutdown();
 }

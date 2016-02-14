@@ -23,9 +23,9 @@ public class OrderServiceTest extends AbstractTestNGSpringContextTests {
     public void testTakeOrder() {
         int size = 15;
 
-        Stream<Client> clientStream = ClientGenerate.generateForOrder(size);
+        final Stream<Client> clientStream = ClientGenerate.generateForOrder(size);
 
-        clientStream.forEach(orderService::takeOrder);
+        clientStream.forEach(o -> orderService.takeOrder(o.getIndex(), o.getCoffee()));
 
 
     }

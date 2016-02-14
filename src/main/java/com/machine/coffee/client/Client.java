@@ -12,7 +12,8 @@ public class Client {
     private long spendTimeToChoose;
     private long spendTimeToPay;
     private long spendTimeToTakeOrder;
-
+    private long coffeeMachineIndex;
+    private long summaryTime;
 
     public Client(int index) {
         this.index = index;
@@ -61,6 +62,22 @@ public class Client {
 
     public int getIndex() {return index;}
 
+    public long getCoffeeMachineIndex() {
+        return coffeeMachineIndex;
+    }
+
+    public void setCoffeeMachineIndex(long coffeeMachineIndex) {
+        this.coffeeMachineIndex = coffeeMachineIndex;
+    }
+
+    public long getSummaryTime() {
+        return summaryTime;
+    }
+
+    public void setSummaryTime(long summaryTime) {
+        this.summaryTime = summaryTime;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -95,6 +112,7 @@ public class Client {
                 ", spendTimeToChoose=" + spendTimeToChoose +
                 ", spendTimeToPay=" + spendTimeToPay +
                 ", spendTimeToTakeOrder=" + spendTimeToTakeOrder +
+                ", coffeeMachineIndex=" + coffeeMachineIndex +
                 '}';
     }
 }

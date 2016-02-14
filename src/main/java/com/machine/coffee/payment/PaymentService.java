@@ -9,4 +9,5 @@ public interface PaymentService {
 
     Client pay(int index);
 
+    void shutdown();
 }

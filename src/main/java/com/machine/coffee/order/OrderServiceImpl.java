@@ -1,6 +1,7 @@
 package com.machine.coffee.order;
 
 import com.machine.coffee.client.Client;
+import com.machine.coffee.product.Coffee;
 import com.machine.coffee.watcher.Watcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -8,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 
 import java.util.Timer;
 import java.util.concurrent.*;
+import java.util.stream.Stream;
 
 /**
  * Created by rado on 06.02.2016.
@@ -27,6 +29,7 @@ public class OrderServiceImpl implements OrderService {
     @Value("${time.leave}")
     private long timeLeave;
 
+    private static final int SLEEP_TIME = 500; // ms, wait for order coffee process will be done
     private ExecutorService orderExecutor;
 
     public void setOrderExecutor(ExecutorService orderExecutor) {
@@ -35,186 +38,108 @@ public class OrderServiceImpl implements OrderService {
 
 
     @Override
-    public void takeOrder(Client client) {
+    public Client takeOrder(final int index, final Coffee coffee) {
         Watcher watcher = new Watcher();
         watcher.start();
 
-        Future<Client> clientFuture = orderExecutor.submit(new Order(client));
+        Future<Client> clientFuture = orderExecutor.submit(new Order(index, coffee));
 
         Client modifyClient = null;
         try {
+            while (!clientFuture.isDone()) {
+                log.info("Wait {} ms until Client-{} will get coffee", SLEEP_TIME, index);
+                TimeUnit.MILLISECONDS.sleep(SLEEP_TIME);
+            }
 
             modifyClient = clientFuture.get();
-
+            log.info("Client got coffee, {}", modifyClient);
         } catch (InterruptedException | ExecutionException e) {
-//            e.printStackTrace();
+            log.error("Process of getting coffee interrupted for Client-{}, {}",
+                    index, e.getMessage(), e);
         }
 
         watcher.stop();
         log.info("Order process {}, duration {} ms", modifyClient, watcher.getInterval());
-    }
 
-    public void findACup() {
-        try {
-            TimeUnit.MILLISECONDS.sleep(timeFindCup);
-        } catch (InterruptedException e) {
-            log.error("Interrupted during operation 'Find a cup'. {}", e.getMessage(), e);
-        }
-    }
-
-
-    public void putCup() {
-        try {
-            TimeUnit.MILLISECONDS.sleep(timePutCup);
-        } catch (InterruptedException e) {
-            log.error("Interrupted during operation 'Put a cup'. {}", e.getMessage(), e);
-        }
-    }
-
-
-    public void pickType() {
-        try {
-            TimeUnit.MILLISECONDS.sleep(timePickType);
-        } catch (InterruptedException e) {
-            log.error("Interrupted during operation 'Pick a type'. {}", e.getMessage(), e);
-        }
+        return modifyClient;
     }
 
     @Override
-    public void fillDrink(long time) {
-        try {
-            TimeUnit.MILLISECONDS.sleep(time);
-        } catch (InterruptedException e) {
-            log.error("Interrupted during operation 'Wait to fill drink'. {}", e.getMessage(), e);
-        }
+    public long findACup(int index) {
+        log.info("Client-{} find a cup, duration {} ms", index, timeFindCup);
+        return timeFindCup;
     }
 
-    public void leave() {
-        try {
-            TimeUnit.MILLISECONDS.sleep(timeLeave);
-        } catch (InterruptedException e) {
-            log.error("Interrupted during operation 'Leave'. {}", e.getMessage(), e);
-        }
+    @Override
+    public long putCup(int index) {
+        log.info("Client-{} put a cup, duration {} ms", index, timePutCup);
+        return timePutCup;
+    }
+
+    @Override
+    public long pickType(int index) {
+        log.info("Client-{} pick a type, duration {} ms", index, timePickType);
+        return timePickType;
+    }
+
+    @Override
+    public long fillDrink(int index, Coffee coffee) {
+        log.info("Client-{} fill {}, duration {} ms",
+                index, coffee.getCoffeeType().name(), coffee.getCockTime());
+        return coffee.getCockTime();
+    }
+
+    public long leave(int index) {
+        log.info("Client-{} left coffee machine, duration {} ms", index, timeLeave);
+        return timeLeave;
     }
 
     private final class Order implements Callable<Client> {
 
-        private Client client;
+        private int index;
+        private Coffee coffee;
 
-        private Order(Client client) {
-            this.client = client;
+        private Order(int index, Coffee coffee) {
+            this.index = index;
+            this.coffee = coffee;
         }
 
         @Override
         public Client call() throws Exception {
-            log.info("Order process is started for Client-{}", client.getIndex());
+            log.info("Order process is started for Client-{}", index);
 
             Watcher watcher = new Watcher();
             watcher.start();
 
-            long fillTime = client.getCoffee().getCockTime();
+            Client client = new Client(index);
 
-/*            findACup();
-            putCup();*/
+            long durationTime = findACup(index);
 
-           Timer timerFindACup = new Timer();
-            timerFindACup.schedule(
-                    new java.util.TimerTask() {
-                        @Override
-                        public void run() {
-                            findACup();
-                        }
-                    },
-                    1
-            );
-
-            timerFindACup.wait(timeFindCup);
-
-            new java.util.Timer().schedule(
-                    new java.util.TimerTask() {
-                        @Override
-                        public void run() {
-                            findACup();
-                        }
-                    },
-                    5000
-            );
-
-            pickType();
-            fillDrink(fillTime);
-            leave();
+            durationTime += putCup(index);
+            durationTime += pickType(index);
+            durationTime += fillDrink(index, coffee);
+            durationTime += leave(index);
 
             watcher.stop();
 
             long interval = watcher.getInterval();
-            log.debug("Client-{}. Operation 'Order' duration {} ms",
-                    client.getIndex(), interval);
 
+            if (interval < durationTime) {
+                client.setSpendTimeToTakeOrder(durationTime);
+            } else {
+                client.setSpendTimeToTakeOrder(interval);
+            }
 
-            client.setSpendTimeToTakeOrder(interval);
-
-            log.info("Order process completed. {}", client);
+            client.setCoffeeMachineIndex(Thread.currentThread().getId());
+            log.info("Client-{} send {} ms near coffee machine {}",
+                    index, client.getSpendTimeToTakeOrder(), Thread.currentThread().getId());
 
             return client;
         }
     }
 
-    /*private final class Order im TimerTask {
-
-        private Client client;
-
-        private Order(int index) {
-            this.client = new Client(index);
-        }
-
-        @Override
-        public void run() {
-            log.info("Order process is started for Client-{}", client.getIndex());
-
-            Watcher watcher = new Watcher();
-            watcher.start();
-
-            long fillTime = client.getCoffee().getCockTime();
-
-            new java.util.Timer().schedule(
-                    new java.util.TimerTask() {
-                        @Override
-                        public void run() {
-                            findACup();
-                        }
-                    },
-                    5000
-            );
-
-            new java.util.Timer().schedule(
-                    new java.util.TimerTask() {
-                        @Override
-                        public void run() {
-                            findACup();
-                        }
-                    },
-                    5000
-            );
-//            findACup();
-            putCup();
-            pickType();
-            fillDrink(fillTime);
-            leave();
-
-            watcher.stop();
-
-            long interval = watcher.getInterval();
-            log.debug("Client-{}. Operation 'Order' duration {} ms",
-                    client.getIndex(), interval);
-
-
-            client.setSpendTimeToTakeOrder(interval);
-
-            log.info("Order process completed. {}", client);
-
-
-        }
-    }*/
-
-
+    @Override
+    public void shutdown() {
+        orderExecutor.shutdown();
+    }
 }

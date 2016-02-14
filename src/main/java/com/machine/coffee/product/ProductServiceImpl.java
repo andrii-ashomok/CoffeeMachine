@@ -5,7 +5,6 @@ import com.machine.coffee.watcher.Watcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-
 import javax.annotation.PostConstruct;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -49,6 +48,7 @@ public class ProductServiceImpl implements ProductService {
     @Value("${time.pick.personal.favorite}")
     private long timePickFavorite;
 
+    private static final int SLEEP_TIME = 500; // ms, wait for choose coffee process will be done
     private Map<String, Coffee> coffeeMap;
     private List<String> drinks;
     private ExecutorService chooseCoffeeExecutor;
@@ -65,8 +65,10 @@ public class ProductServiceImpl implements ProductService {
 
         coffeeMap.put(espresso, new Coffee(CoffeeType.ESPRESSO,
                 priceEspresso, cockTimeEspresso));
+
         coffeeMap.put(latte, new Coffee(CoffeeType.LATTE,
                 priceLatte, cockTimeLatte));
+
         coffeeMap.put(cappuccino, new Coffee(CoffeeType.CAPPUCCINO,
                 priceCappuccino, cockTimeCappuccino));
 
@@ -86,13 +88,16 @@ public class ProductServiceImpl implements ProductService {
 
         Client modifyClient = null;
         try {
-           /* while (!clientFuture.isDone())
-                Thread.currentThread().join();*/
+            while (!clientFuture.isDone()) {
+                log.info("Wait {} ms until Client-{} will choose coffee", SLEEP_TIME, index);
+                TimeUnit.MILLISECONDS.sleep(SLEEP_TIME);
+            }
 
             modifyClient = clientFuture.get();
-
+            log.info("Coffee was chosen, {}", modifyClient);
         } catch (InterruptedException | ExecutionException e) {
-//            e.printStackTrace();
+            log.error("Process of Coffee choose interrupted for Client-{}, {}",
+                    index, e.getMessage(), e);
         }
 
         return modifyClient;
@@ -125,15 +130,6 @@ public class ProductServiceImpl implements ProductService {
                     client.getIndex(), interval);
 
             if (interval < timePickFavorite) {
-
-                try {
-                    log.debug("Client index {}. Operation 'Choose drink' go to sleep: {} ms",
-                            client.getIndex(), timePickFavorite - interval);
-                    Thread.currentThread().join(timePickFavorite - interval);
-                } catch (InterruptedException e) {
-                    log.error("Interrupted during operation 'Choose drink'. {}", e.getMessage(), e);
-                }
-
                 client.setSpendTimeToChoose(timePickFavorite);
             } else {
                 client.setSpendTimeToChoose(interval);
@@ -145,6 +141,8 @@ public class ProductServiceImpl implements ProductService {
         }
     }
 
-
-
+    @Override
+    public void shutdown() {
+        chooseCoffeeExecutor.shutdown();
+    }
 }

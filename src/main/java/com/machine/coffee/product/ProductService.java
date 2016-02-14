@@ -10,4 +10,6 @@ public interface ProductService {
     Coffee getProduct(String productName);
 
     Client chooseCoffee(int index);
+
+    void shutdown();
 }

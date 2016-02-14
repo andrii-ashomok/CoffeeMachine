@@ -22,12 +22,14 @@
         <property name="chooseCoffeeExecutor" ref="chooseCoffeeExecutor"/>
     </bean>
 
-    <bean id="ClientService" class="com.machine.coffee.client.ClientServiceImpl">
+    <bean id="ClientService" class="com.machine.coffee.client.ClientServiceImpl" destroy-method="shutdown">
         <property name="processExecutor" ref="processExecutor"/>
     </bean>
 
     <bean id="PaymentService" class="com.machine.coffee.payment.PaymentServiceImpl">
         <property name="paymentExecutor" ref="paymentExecutor"/>
     </bean>
+
+    <bean id="Statistic" class="com.machine.coffee.statistics.StatisticImpl"></bean>
 
 </beans>
